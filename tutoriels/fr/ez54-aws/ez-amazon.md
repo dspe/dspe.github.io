@@ -199,3 +199,91 @@ Tout fonctionne? Bonne nouvelle, nous pouvons passer à l'étape suivante.
 
 Configuration du cluster eZ 5
 -----------------------------
+
+L'arrivée de la version 5.4 d'eZ Publish apporte le support natif du cluster via la bundle ```oneupFlysystemBundle```. Ce bundle permet de pousser vos fichiers vers du Dropbox, Amazon S3, Google Drive, etc.
+
+> Attention: le noyau d'eZ Publish impose l'utilisation de la version 0.4 contenant tous les adapters de la documentation contrairement à la version 1.x
+
+Afin de configurer le bundle pour utiliser l'adapter AwsS3, nous allons avoir besoin du SDK PHP que nous fournis Amazon. Vous allez voir que les problèmes commencent ;) Installons le SDK:
+
+```
+composer require "aws/aws-sdk-php:2.*"
+```
+
+Nous allons placer des variables d'environnement dans le virtual host. Vous allez voir que le SDK est capricieux avec nous si nous n'agissons pas de cette manière.
+
+Première action mettre à jour le VirtualHost (ici nous utilisons Apache. A adapter en fonction de votre configuration).
+
+```
+SetEnv AWS_ACCESS_KEY_ID TheAccessKeyIdValue
+SetEnv AWS_SECRET_ACCESS_KEY TheSecretAccessKey
+SetEnv AWS_S3_REGION eu-west-1
+SetEnv AWS_S3_BUCKET my-app-bucket
+SetEnv AWS_S3_PREFIX var/ezdemo/storage/images
+SetEnv AWS_S3_PUBLIC_HOST s3-eu-west-1.amazonaws.com
+```
+
+Les noms ```AWS_ACCESS_KEY_ID``` et ```AWS_SECRET_ACCESS_KEY``` ne peuvent être changés. Vous pouvez trouver plus d'informations [ici](http://docs.aws.amazon.com/aws-sdk-php/v2/guide/credentials.html#using-credentials-from-environment-variables).
+
+Créons le fichier ```ezpublish/config/parameters_prod.php``` avec le contenu suivant:
+
+```php
+<?php
+
+// AWS S3 storage credentials
+$container->setParameter('aws_s3_key',    getenv('AWS_ACCESS_KEY_ID'));
+$container->setParameter('aws_s3_secret', getenv('AWS_SECRET_ACCESS_KEY'));
+$container->setParameter('aws_s3_region', getenv('AWS_S3_REGION'));
+$container->setParameter('aws_s3_bucket', getenv('AWS_S3_BUCKET'));
+$container->setParameter('aws_s3_prefix', getenv('AWS_S3_PREFIX'));
+$container->setParameter('aws_s3_host',   getenv('AWS_S3_PUBLIC_HOST'));
+```
+
+N'oubliez pas de l'importer depuis le fichier ```config_prod.yml```.
+
+Il ne reste plus qu'à configurer ezpublish et le composant IO pour terminer notre voyage ;) Dans le fichier ```ezpublish/config/ezpublish_prod.yml```. Pour des informations complémentaires sur la configuration complète se trouve sur [doc.ez.no](https://doc.ez.no/display/EZP/Persistence+cache+configuration).
+
+Dans le fichier placer la configuration suivante:
+
+```
+ez_io:
+    metadata_handlers:
+        default:
+            legacy_dfs_cluster:
+                connection: doctrine.dbal.dfs_connection
+    binarydata_handlers:
+        default:
+            flysystem:
+                adapter: default
+ezpublish:
+    system:
+        default:
+            io:
+                metadata_handler: default
+                binarydata_handler: default
+                url_prefix: "//%aws_s3_host%/%aws_s3_bucket%/%aws_s3_prefix%"
+
+oneup_flysystem:
+    adapters:
+        default:
+            awss3:
+                client: s3_client
+                bucket: %aws_s3_bucket%
+                prefix: %aws_s3_prefix%
+
+services:
+    s3_client:
+        class: Aws\S3\S3Client
+        factory_class: Aws\S3\S3Client
+        factory_method: factory
+        arguments:
+            -
+                region: "%aws_s3_region%"
+                credentials:
+                    key: "%aws_s3_key%"
+                    secret: "%aws_s3_secret%"
+```
+
+Vous trouverez la documentation pour l'[adapter AWS S3](https://github.com/1up-lab/OneupFlysystemBundle/blob/0.x-dev/Resources/doc/adapter_awss3.md) sur github.
+
+Il ne reste plus qu'à tester le bon fonctionnement.
