@@ -12,7 +12,7 @@ Architecture Amazon
 
 Nous allons mettre en place une architecture de hautes disponibilités à savoir:
 - un loadbalancer
-- deux serveurs Varnish Cache
+- deux serveurs [Varnish Cache](https://www.varnish-cache.org/)
 - deux serveurs web eZ
 - un [RDS](https://aws.amazon.com/fr/rds/) (Relational Database Service)
 - un [ElastiCache](https://aws.amazon.com/fr/elasticache/) pour la mise en place des sessions et cache provenant de stash.
