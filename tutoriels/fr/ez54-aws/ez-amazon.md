@@ -3,7 +3,9 @@ eZ 5.4 cluster sur Amazon AWS
 
 Ce tutoriel va se consacrer à la mise en place d'un cluster eZ Publish 5.4 sur l'architecture Cloud d'Amazon AWS.
 
-Petit rappel sur le cluster d'eZ. Depuis les versions 5.x, seul le **cluster eZDFS** est supporté par les deux noyaux. Afin de résumer au mieux, ce cluster s'appuie sur un lien NFS depuis les serveurs frontaux vers un NAS/SAN mais également deux tables de données contenant des informations sur les caches et images clusterisés. Pour plus d'informations consultés le site de la [documentation d'eZ](https://doc.ez.no/eZ-Publish/Technical-manual/5.x/Features/Clustering/Cluster-File-Handlers#eztoc132713_4).
+Petit rappel sur le cluster d'eZ; depuis les versions 5.x, seul le **cluster eZDFS** est supporté par les deux noyaux. Afin de résumer au mieux, ce cluster s'appuie sur un **lien NFS** depuis les serveurs frontaux vers un **NAS/SAN** mais également deux tables de données contenant des informations sur les caches et images clusterisés.
+
+Pour plus d'informations consultez le site de la [documentation d'eZ](https://doc.ez.no/eZ-Publish/Technical-manual/5.x/Features/Clustering/Cluster-File-Handlers#eztoc132713_4).
 
 Architecture Amazon
 -------------------
