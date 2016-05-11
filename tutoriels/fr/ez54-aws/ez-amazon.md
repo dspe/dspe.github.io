@@ -289,3 +289,21 @@ services:
 Vous trouverez la documentation pour l'[adapter AWS S3](https://github.com/1up-lab/OneupFlysystemBundle/blob/0.x-dev/Resources/doc/adapter_awss3.md) sur github.
 
 Il ne reste plus qu'à tester le bon fonctionnement.
+
+Mise en place de l'autoscaling
+------------------------------
+
+Dans une architecture tel que nous la décrivons ici, nous aimerions être capable de pouvoir déployer aisément et sans retoucher à la configuration *X* serveurs Varnish et *Y* frontaux eZ.
+Je vous laisse le soin, dans un premier temps, de regarder la [documentation sur l'autoscalling](http://docs.aws.amazon.com/fr_fr/autoscaling/latest/userguide/GettingStartedTutorial.html).
+
+Il est important sur vos groupes d'autoscaling de définir une clé/valeur (key/backend-layer) afin que l'API d'Amazon puisse nous renvoyer une liste d'ip de serveurs.
+Vous pouvez vous baser sur le [script shell](https://github.com/jnerin/varnish-4-aws-ec2-autoscalinggroup/blob/master/varnish/generate-backends.sh), afin de recharger dynamiquement les serveurs Varnish avec les adresses des nouveaux serveurs de backend contenus dans le groupe d'autoscaling. Il vous faudra également le rajouter en tache cron.
+L'idée du script est la suivante:
+
+- Récupération des IPs des serveurs backend via l'API d'AWS
+- Un fichier md5 permet de vérifier si des ajouts / suppressions de serveurs ont été réalisés
+- Dans le cas d'une modification, une création d'un fichier ```backend.vcl``` contenant la liste des backends est faite, puis importer via la commande ```varnishadm```.
+
+Il en sera de même pour la génération de la configuration côté eZ (Publish/Platform). Le plus simple sera sur votre fichier ```ezpublish_prod.yml``` d'importer un fichier ```varnish.yml```. Ce dernier sera générer par notre script bash et contiendra la liste des IPs des serveurs Varnish qui nous sera fourni par l'API d'AWS.
+
+Voilà tout le nécessaire pour mettre en place eZ Publish/Platform sur une plateforme AWS.
