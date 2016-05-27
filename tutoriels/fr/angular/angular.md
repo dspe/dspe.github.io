@@ -30,7 +30,7 @@ $ bower init
 
 Bower va vous demander deux trois petites choses pour initialiser le fichier ```bower.json```. Vous devriez avoir un fichier de ce genre:
 
-```json
+```
 {
   name: 'angular',
   authors: [
@@ -73,3 +73,63 @@ $ bower install --save angular#1.4.10 angular-resource angular-route
 
 Le code
 -------
+
+Je ne vais pas vous détailler tous les rouages d'Angular.js et de l'API Rest d'eZ, mais vous donner les premières billes pour continuer votre site.
+Dans un premier temps nous pouvons se baser sur l'architecture des dossiers suivants
+![Architecture des fichiers](./assets/tree.png)
+
+On va commencer par notre fichier principal qui sera ```app/app.js``` avec le contenu suivant:
+```javascript
+var module = angular.module("NewsApplication", ["ngRoute", "ngResource"]);
+
+// Route configuration
+module.config( [ "$routeProvider", "$locationProvider", function($routeProvider, $locationProvider) {
+
+	$routeProvider
+	.when('/', {
+		templateUrl: "./app/views/root.html",
+		controller: 'MainController'
+	})
+	.otherwise({
+		redirectTo: '/'
+	});
+
+    // use the HTML5 history API
+    //$locationProvider.html5Mode(true);
+}]);
+
+// Global configuration
+module.run(['$http', '$rootScope', 'ezpublish', function($http, $rootScope, ezpublish) {
+
+    $rootScope.ezpublish = ezpublish;
+    $rootScope.capi = new eZ.CAPI(
+        ezpublish.url,
+        new eZ.SessionAuthAgent({login: "admin", password: "publish"})
+    );
+
+    $rootScope.capi.logIn(function (error, response) {
+        if ( error ) {
+            console.log('Error!');
+            return;
+        }
+    });
+
+    //$http.defaults.headers.common.Authorization = 'Basic YWRtaW46cHVibGlzaA==';
+    //$http.defaults.headers.post['Access-Control-Allow-Credentials'] = 'true';
+}]);
+```
+
+La première partie est du pur Angular.js permettant la gestion des routes et de charger un ```template``` et ```controller``` associés. Nous reviendrons sur le controller un peu plus tard.
+Afin d'utiliser la libraire ```CAPI```, nous devons nous connecter à l'API d'eZ. Dans notre exemple, nous allons faire une connection très peu sécurisé en utilisant un identifiant et mot de passe administrateur. **Ne jamais faire cela en production***.
+
+Dans l'exemple ci dessus, nous utilisons l'authentification par session, demandant un login et password. Il existe deux autres possibilités tel que: ```Session authentification``` (demande une session déjà existante) et ```Basic authentication```. Vous trouverez tous les informations sur la [documentation](https://doc.ez.no/display/DEVELOPER/Using+the+JavaScript+REST+API+Client#UsingtheJavaScriptRESTAPIClient-Instantiationandauthentication). On sauvegarde le tout à travers une variable du rootScope afin de pouvoir l'utiliser ailleurs.
+
+Comme vous avez pu le contaster, nous avons une variable ```ezpublish```. Elle  vient d'un fichier de constantes que nous avons crées: ```app/constants.js```
+
+```
+module.constant("ezpublish", {
+        "url": 'http://ezpublish.dev',
+        "path": '/api/ezp/v2',
+        "rootNode": '2',
+});
+```
